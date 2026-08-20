@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Alpine.js - sembunyikan elemen sebelum diinisialisasi */
+[x-cloak] { display: none !important; }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+
+/* Dark Mode Glass Styles */
+html.dark .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+html.dark .glass-modal { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+
+/* Light Mode Overrides */
+html:not(.dark) body { background-color: #f8fafc !important; color: #0f172a !important; }
+html:not(.dark) main { background-color: #f8fafc !important; }
+html:not(.dark) aside#sidebar { background-color: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.02); }
+html:not(.dark) header { background-color: rgba(255, 255, 255, 0.85) !important; border-color: #e2e8f0 !important; backdrop-filter: blur(12px); }
+
+html:not(.dark) .glass-panel {
+    background: #ffffff !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+html:not(.dark) .glass-modal {
+    background: #ffffff !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) .font-bold.text-white { color: #0f172a !important; }
+
+html:not(.dark) .text-slate-100 { color: #0f172a !important; }
+html:not(.dark) .text-slate-200, html:not(.dark) .text-slate-300 { color: #334155 !important; }
+html:not(.dark) .text-slate-400 { color: #64748b !important; }
+html:not(.dark) .text-slate-500 { color: #94a3b8 !important; }
+
+html:not(.dark) .bg-slate-950 { background-color: #f8fafc !important; }
+html:not(.dark) .bg-slate-900 { background-color: #f8fafc !important; border-color: #e2e8f0 !important; }
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/50 { background-color: #ffffff !important; border-color: #e2e8f0 !important; }
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/50 { background-color: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder { color: #94a3b8 !important; }
+
+html:not(.dark) table thead { background-color: #f1f5f9 !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+html:not(.dark) table tbody tr { border-color: #e2e8f0 !important; }
+html:not(.dark) table tbody tr:hover { background-color: #f8fafc !important; }
+
+html:not(.dark) .bg-blue-500\/10, html:not(.dark) .bg-blue-500\/20, html:not(.dark) .bg-blue-600\/10 {
+    background-color: #eff6ff !important; color: #1d4ed8 !important; border-color: #bfdbfe !important;
+}
+html:not(.dark) .bg-emerald-500\/10, html:not(.dark) .bg-emerald-500\/20, html:not(.dark) .bg-emerald-600\/10 {
+    background-color: #ecfdf5 !important; color: #047857 !important; border-color: #a7f3d0 !important;
+}
+html:not(.dark) .bg-amber-500\/10, html:not(.dark) .bg-amber-500\/20, html:not(.dark) .bg-amber-600\/10 {
+    background-color: #fffbeb !important; color: #b45309 !important; border-color: #fde68a !important;
+}
+html:not(.dark) .bg-indigo-500\/10, html:not(.dark) .bg-indigo-500\/20, html:not(.dark) .bg-indigo-600\/10 {
+    background-color: #eef2ff !important; color: #4338ca !important; border-color: #c7d2fe !important;
+}
+
+html:not(.dark) .bg-blue-600 { background-color: #2563eb !important; color: #ffffff !important; }
+html:not(.dark) .bg-blue-600 *, html:not(.dark) .bg-blue-600 i { color: #ffffff !important; }
+html:not(.dark) .bg-emerald-600 { background-color: #059669 !important; color: #ffffff !important; }
+html:not(.dark) .bg-emerald-600 *, html:not(.dark) .bg-emerald-600 i { color: #ffffff !important; }
+html:not(.dark) .bg-indigo-600 { background-color: #4f46e5 !important; color: #ffffff !important; }
+html:not(.dark) .bg-indigo-600 *, html:not(.dark) .bg-indigo-600 i { color: #ffffff !important; }
+
+html:not(.dark) button.bg-slate-800 { background-color: #f1f5f9 !important; color: #334155 !important; border-color: #cbd5e1 !important; }
+html:not(.dark) button.bg-slate-800:hover { background-color: #e2e8f0 !important; color: #0f172a !important; }
+
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Light Mode — Teks lebih tajam / kontras tinggi */
+html:not(.dark) .text-slate-400 { color: #475569 !important; }
+html:not(.dark) .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .text-slate-600 { color: #334155 !important; }
+html:not(.dark) .text-slate-700 { color: #1e293b !important; }
+
+html:not(.dark) .text-blue-400,
+html:not(.dark) .text-blue-500,
+html:not(.dark) .text-blue-600,
+html:not(.dark) .text-blue-300 { color: #1d4ed8 !important; }
+
+html:not(.dark) .text-emerald-400,
+html:not(.dark) .text-emerald-300 { color: #047857 !important; }
+
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-amber-200 { color: #b45309 !important; }
+
+html:not(.dark) .text-red-400,
+html:not(.dark) .text-red-300 { color: #b91c1c !important; }
+
+html:not(.dark) .text-indigo-400,
+html:not(.dark) .text-indigo-300,
+html:not(.dark) .text-indigo-200 { color: #4338ca !important; }
+
+html:not(.dark) .text-green-400 { color: #059669 !important; }
+html:not(.dark) .text-green-600 { color: #047857 !important; }
+
+/* Flash message background di light mode */
+html:not(.dark) .bg-emerald-900\/30 { background-color: #ecfdf5 !important; }
+html:not(.dark) .bg-red-900\/30 { background-color: #fef2f2 !important; }
+html:not(.dark) .bg-amber-900\/30 { background-color: #fffbeb !important; }
+
+/* Subtle Pulse Animation */
+@keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
