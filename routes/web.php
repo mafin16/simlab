@@ -6,8 +6,10 @@ use App\Http\Controllers\AssetImportController;
 use App\Http\Controllers\AssetPeripheralController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\SeatMapController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,6 +77,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('tickets.resolve');
         Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
     });
+
+    // Fase 5: Seat Mapping & Presensi
+    Route::get('/seatmap', [SeatMapController::class, 'index'])->name('seatmap.index');
+    Route::get('/seatmap/status', [SeatMapController::class, 'status'])->name('seatmap.status');
 });
+
+// Check-in presensi publik (hasil scan QR di meja PC, tanpa login)
+Route::get('/checkin/{asset_code}', [PresenceController::class, 'show'])->name('checkin.show');
+Route::post('/checkin/{asset_code}', [PresenceController::class, 'store'])->name('checkin.store');
+Route::post('/checkin/{asset_code}/checkout', [PresenceController::class, 'checkout'])->name('checkin.checkout');
 
 require __DIR__.'/auth.php';

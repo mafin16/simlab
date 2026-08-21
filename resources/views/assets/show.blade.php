@@ -107,10 +107,13 @@
                     <i class="fa-solid fa-qrcode text-emerald-400"></i> QR Code Aset
                 </h3>
                 <div class="bg-white p-4 rounded-xl inline-block shadow-md mx-auto block w-fit">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ $asset->asset_code }}" alt="QR {{ $asset->asset_code }}" class="w-40 h-40">
+                    @php
+                        $checkinUrl = route('checkin.show', ['asset_code' => $asset->asset_code]);
+                    @endphp
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode($checkinUrl) }}" alt="QR {{ $asset->asset_code }}" class="w-40 h-40">
                 </div>
-                <p class="text-[11px] text-slate-400 text-center mt-3">Scan QR untuk lapor cepat kerusakan unit ini.</p>
-                <a href="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ $asset->asset_code }}" target="_blank" class="mt-3 w-full bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold py-2 flex items-center justify-center gap-1.5 hover:bg-blue-600/30 transition-all">
+                <p class="text-[11px] text-slate-400 text-center mt-3">Scan QR untuk check-in presensi di unit ini.</p>
+                <a href="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($checkinUrl) }}" target="_blank" class="mt-3 w-full bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold py-2 flex items-center justify-center gap-1.5 hover:bg-blue-600/30 transition-all">
                     <i class="fa-solid fa-print"></i> Cetak QR Stiker
                 </a>
             </div>

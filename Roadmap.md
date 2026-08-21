@@ -11,7 +11,7 @@
 | 2 | Manajemen Aset & Periferal | ✅ Done | 2026-08-20 | 2026-08-20 | CRUD aset, periferal, QR Code, Import/Export Excel |
 | 3 | Penjadwalan & Reservasi Lab | ✅ Done | 2026-08-20 | 2026-08-20 | Kalender mingguan, booking recurring mingguan, collision detection auto-reject |
 | 4 | Helpdesk & Tiket (Kanban) | ✅ Done | 2026-08-21 | 2026-08-21 | Kanban 3 kolom, auto-escalasi status PC, SLA |
-| 5 | Seat Mapping & Presensi | ⬜ Not Started | - | - | Denah interaktif, check-in QR, polling AJAX |
+| 5 | Seat Mapping & Presensi | ✅ Done | 2026-08-21 | 2026-08-21 | Denah interaktif live (polling 10 detik), check-in QR publik, auto clear session |
 | 6 | Laporan & Polish | ⬜ Not Started | - | - | Export Excel/PDF, halaman Riwayat Tiket (tabel+pagination), Dark/Light mode, responsive |
 
 ## Keputusan Teknis (Technical Decisions)
@@ -30,6 +30,8 @@
 | 2026-08-20 | Collision detection dipusatkan di `App\Services\ScheduleCollisionService` — dipakai ScheduleController & BookingController, langsung reject tanpa konfirmasi (kesepakatan). |
 | 2026-08-21 | Fase 4: form tiket pakai dropdown prioritas (High/Medium/Low, default Medium) + tombol hapus tiket untuk super_admin & teknisi. Matriks role: lihat board + buat tiket = super_admin, teknisi, instruktur; proses/selesaikan/hapus = super_admin, teknisi; siswa 403. |
 | 2026-08-21 | Generator kode tiket (`Ticket::nextCode()`) berbasis suffix kode terakhir (max `ticket_code`), bukan `max(id)+1` — id MySQL auto-increment bisa loncat (rollback/delete) sehingga kode jadi tidak berurutan. |
+| 2026-08-21 | Fase 5: check-in presensi publik tanpa login (siswa isi NISN + nama setelah scan QR). PC Degraded boleh dipresensi dengan warning kuning; Maintenance/Scrapped ditolak. Bentrok identitas (NISN masih aktif di PC lain) → auto check-out dari PC lama lalu pindah (auto pindah). Kursi sudah terisi orang lain → ditolak dengan info nama pemakai. |
+| 2026-08-21 | Fase 5: seat map bisa dibuka semua role (termasuk siswa, view-only); polling AJAX tiap 10 detik; modal detail PC tidak menyediakan ubah status manual demi konsistensi Model A (status PC hanya berubah lewat tiket) — diganti tombol "Lapor Kendala PC Ini". QR code aset kini meng-encode URL check-in lengkap (bukan sekadar kode aset) agar scan HP langsung membuka form presensi. |
 
 ## Fase 1 — Detail Tasks
 
@@ -54,6 +56,18 @@
 - [x] TicketTest: 25 test (RBAC, validasi, auto-escalasi, sync status multi-tiket, SLA guard, kode sekuensial, endpoint modal resolve, limit kolom resolved)
 - [x] 99 test pass (265 assertions), Pint clean
 
+## Fase 5 — Detail Tasks
+
+- [x] SeatMapController: index (denah per lab, default lab pertama), status (endpoint JSON untuk polling), `closeExpiredPresences()` (auto clear session)
+- [x] Auto clear session: presensi aktif ditutup tepat di jam akhir sesi jadwal lab hari itu (`check_out_time` = end_time sesi); sisa presensi dari hari sebelumnya disapu ke 23:59
+- [x] PresenceController publik: form check-in (NISN + nama), validasi bisnis (kursi terisi ditolak, auto pindah antar PC, idempotent re-submit), check-out via identitas
+- [x] View `seatmap/index`: grid kartu PC responsif dengan kode warna (hijau Ready, biru pulse terisi, kuning Degraded, merah Maintenance, abu Scrapped), legend + counter live, modal detail PC (spesifikasi, pengguna aktif, tombol Lapor Kendala), polling Alpine 10 detik
+- [x] View `presences/checkin`: 4 state (form, sukses check-in + tombol checkout, checkout sukses, PC diblokir) di guest layout branding SIMLAB
+- [x] Sidebar menu "Seat Mapping & User" (F5) aktif; QR code aset meng-encode URL check-in lengkap
+- [x] Routes: `/seatmap` + `/seatmap/status` (auth semua role), `/checkin/{asset_code}` GET/POST + `/checkout` (publik tanpa login)
+- [x] PresenceFactory + SeatMapTest (8 test) + PresenceTest (11 test)
+- [x] 118 test pass (341 assertions), Pint clean, npm build OK
+
 ## Fase 6 — Catatan Desain Awal
 
 - Halaman **Riwayat Tiket**: tabel semua tiket (termasuk resolved lama yang tidak tampil di Kanban) + pagination + filter + export Excel/PDF. Kanban board hanya menampilkan 5 tiket resolved terbaru agar ringkas.
@@ -65,6 +79,7 @@
 | Super Admin | admin@simlab.test | password |
 | Teknisi | teknisi@simlab.test | password |
 | Instruktur | instruktur@simlab.test | password |
+| Siswa | siswa@simlab.test | password |
 
 ## Changelog
 
@@ -91,3 +106,8 @@
 | 2026-08-21 | Perbaikan logika status PC (Opsi B): `syncAssetStatus()` menghitung ulang status PC dari sisa tiket aktif (`!= Resolved`, severity tertinggi menang, guard Scrapped) — dipakai di `resolve()` & `destroy()`. Fix 2 bug: (1) hapus tiket tidak pernah mengembalikan status PC, (2) resolve 1 dari 2 tiket aktif memaksa PC langsung Ready. Keputusan desain Model A: status PC = kondisi fisik dari severity komponen; In Progress tidak mengubah status PC; Open & In Progress sama-sama dihitung aktif. Pesan sukses resolve kini dinamis sesuai status akhir PC. +5 test baru. |
 | 2026-08-21 | Revisi: limit kolom Resolved di Kanban diturunkan dari 10 menjadi 5 tiket terbaru (keputusan user; riwayat lengkap tetap diserahkan ke laporan Fase 6). Test limit direvisi mengikuti (`test_resolved_column_shows_only_five_newest`). |
 | 2026-08-21 | Data tiket contoh dibuang: TicketSeeder dihapus dari DatabaseSeeder + file seeder dihapus, database di-fresh — tabel `tickets` kosong (fitur Lapor Kendala mulai dari data nyata user). Labs/assets/schedules/users tetap ter-seed. TicketFactory dipertahankan untuk kebutuhan test. |
+| 2026-08-21 | Fase 5 selesai: Seat Mapping & Presensi. SeatMapController (denah per lab + endpoint JSON polling 10 detik + auto clear session berbasis jadwal), PresenceController publik (check-in NISN+nama tanpa login, auto pindah antar PC, guard kursi terisi & PC Maintenance/Scrapped, checkout via identitas), view seatmap grid kartu kode-warna dengan modal detail + Alpine polling, view check-in 4 state di guest layout, sidebar F5 aktif, QR aset kini encode URL check-in, PresenceFactory + 19 test baru → 118 test pass (341 assertions). |
+| 2026-08-21 | Bugfix: halaman seat map error/rusak di browser — atribut `x-data="..."` memakai pembatas kutip ganda sementara `@json($seats)` menyuntik JSON penuh karakter `"` sehingga atribut HTML terpotong sejak data pertama dan Alpine gagal parse (server tetap 200, test & log lolos). Fix: pembatas diganti kutip tunggal `x-data='...'` dan semua string literal JS di dalamnya dibalik ke kutip ganda — pola yang sama dengan view Kanban tiket. Verifikasi render: atribut kini utuh berisi JSON valid. |
+| 2026-08-21 | Bugfix lanjutan seat map (gejala sama setelah fix pertama): directive `@js()` ternyata menghasilkan string JS ber-pembatas kutip TUNGGAL, sehingga di dalam atribut `x-data='...'` nilai `serverTime`/`endpoint` memutus atribut di apostrof pertama — sisa kode JS bocor jadi teks di halaman (`his.refresh(), 10000); }, async refresh()...`). Fix: kedua `@js()` diganti `@json()` (json_encode murni, pembatas kutip ganda). Pelajaran: `@js()` hanya aman di atribut kutip ganda; `@json()` untuk atribut kutip tunggal. Verifikasi forensik HTTP: 0 apostrof mentah di dalam atribut (sebelumnya 6), 118 test tetap pass. |
+| 2026-08-21 | Persiapan pengujian alur siswa: akun `siswa@simlab.test` (password) ditambahkan ke DatabaseSeeder + database di-fresh; tombol "Lapor Kendala PC Ini" di modal seat map disembunyikan untuk role siswa (halaman Helpdesk 403 untuk siswa sesuai RBAC — mencegah klik → error page). +2 test (siswa tanpa tombol, admin dengan tombol) → 120 test pass (345 assertions). Verifikasi HTTP: siswa lihat denah tanpa tombol, admin tetap dengan tombol. |
+| 2026-08-21 | Uji coba end-to-end dari HP sukses: check-in publik via `php artisan serve --host=0.0.0.0 --port=8080` (URL HP: `http://<ip-lan>:8080/checkin/<kode>` tanpa prefix `/simlab/public`) → kartu di seat map admin berubah biru pulse otomatis dalam ≤10 detik tanpa refresh. Catatan operasional: akses IP LAN dari luar terblokir selama HMA VPN aktif (adapter Wintun menyaring trafik non-loopback) — VPN harus dilepas saat uji coba; artisan serve default hanya bind 127.0.0.1 sehingga wajib `--host=0.0.0.0` untuk diakses perangkat lain. Fase 5 resmi tuntas & terverifikasi manual. Fase 6 menunggu konfirmasi user. |

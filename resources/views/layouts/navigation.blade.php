@@ -41,11 +41,10 @@
             <span>Inventaris Aset & PC</span>
         </x-nav-link>
 
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all cursor-not-allowed opacity-60" title="Coming di Fase 5">
+        <x-nav-link :href="route('seatmap.index')" :active="request()->routeIs('seatmap.*')">
             <i class="fa-solid fa-border-all w-5 text-center text-base"></i>
-            <span class="flex-1">Seat Mapping & User</span>
-            <span class="text-[8px] px-1 py-0.5 rounded bg-slate-800 text-slate-500">F5</span>
-        </a>
+            <span>Seat Mapping & User</span>
+        </x-nav-link>
 
         <x-nav-link :href="route('schedules.index')" :active="request()->routeIs('schedules.*')">
             <i class="fa-solid fa-calendar-days w-5 text-center text-base"></i>

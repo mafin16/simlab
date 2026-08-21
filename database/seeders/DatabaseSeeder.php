@@ -96,5 +96,12 @@ class DatabaseSeeder extends Seeder
             'password' => 'password',
             'role' => User::ROLE_INSTRUKTUR,
         ]);
+
+        User::factory()->create([
+            'name' => 'Siswa Contoh',
+            'email' => 'siswa@simlab.test',
+            'password' => 'password',
+            'role' => User::ROLE_SISWA,
+        ]);
     }
 }
