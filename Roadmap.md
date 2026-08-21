@@ -45,17 +45,18 @@
 ## Fase 4 — Detail Tasks
 
 - [x] Model `Ticket`: konstanta STATUSES/PRIORITIES/COMPONENTS, SLA_HOURS (High=2, Medium=24, Low=48 jam), mapping komponen→status aset, helper `slaDueAt()`/`isOverdue()`/`nextCode()`
-- [x] TicketController: index (board + stats), store (auto-escalasi status PC), start, resolve (auto-kembali Ready), destroy
+- [x] TicketController: index (board + stats), store (auto-escalasi status PC), start, resolve, destroy
 - [x] Routes `/tickets` dengan middleware role berlapis
-- [x] TicketFactory + TicketSeeder (6 tiket contoh) + DatabaseSeeder
+- [x] TicketFactory + DatabaseSeeder (data tiket contoh dihapus — mulai dari data nyata user)
 - [x] View `tickets/index`: Kanban 3 kolom (Open/In Progress/Resolved), badge prioritas & SLA, modal lapor + selesaikan + hapus
-- [x] Sidebar menu Helpdesk aktif, topbar "Lapor Kendala" → tickets.index, dashboard widget link "Lihat Semua"
-- [x] TicketTest: 20 test (RBAC, validasi, auto-escalasi, SLA guard, kode sekuensial, endpoint modal resolve, limit kolom resolved)
-- [x] 94 test pass (248 assertions), Pint clean
+- [x] Sidebar menu Helpdesk aktif, topbar "Lapor Kendala" context-aware (modal langsung saat sudah di halaman tiket), dashboard widget link "Lihat Semua"
+- [x] Logika status PC Model A: status = kondisi fisik per severity komponen; `syncAssetStatus()` recompute dari sisa tiket aktif saat resolve/hapus (guard Scrapped); In Progress tidak mengubah status; kolom Resolved dibatasi 5 terbaru
+- [x] TicketTest: 25 test (RBAC, validasi, auto-escalasi, sync status multi-tiket, SLA guard, kode sekuensial, endpoint modal resolve, limit kolom resolved)
+- [x] 99 test pass (265 assertions), Pint clean
 
 ## Fase 6 — Catatan Desain Awal
 
-- Halaman **Riwayat Tiket**: tabel semua tiket (termasuk resolved lama yang tidak tampil di Kanban) + pagination + filter + export Excel/PDF. Kanban board hanya menampilkan 10 tiket resolved terbaru agar ringkas.
+- Halaman **Riwayat Tiket**: tabel semua tiket (termasuk resolved lama yang tidak tampil di Kanban) + pagination + filter + export Excel/PDF. Kanban board hanya menampilkan 5 tiket resolved terbaru agar ringkas.
 
 ## Akun Default (untuk testing)
 
@@ -86,3 +87,7 @@
 | 2026-08-21 | Revisi UX tombol "Lapor Kendala" di topbar: sebelumnya hanya anchor reload ke tickets.index sehingga saat diklik dari halaman Helpdesk itu sendiri tidak ada efek yang terlihat. Sekarang context-aware — jika sudah di halaman tiket, modal "Lapor Kerusakan" langsung dibuka via `$dispatch('open-modal')` tanpa reload; jika dari halaman lain, tetap navigasi ke halaman Helpdesk. `href` dipertahankan agar middle-click tetap berfungsi. |
 | 2026-08-21 | Bugfix: submit modal "Selesaikan Tiket" error 405 — action form hardcoded `/tickets/{id}` (POST) padahal route resolve adalah `POST /tickets/{id}/resolve`. Fix: suffix `/resolve` ditambahkan di action Alpine + regression test baru (`resolve modal form targets resolve endpoint`) yang memastikan view memuat endpoint benar. 19 test TicketTest pass. |
 | 2026-08-21 | Kolom Resolved di Kanban dibatasi 10 tiket terbaru (urut `resolved_at` desc) agar board tidak memanjang tanpa batas; badge tetap menampilkan total semua tiket selesai + catatan "Menampilkan 10 terbaru dari N". Keputusan: riwayat penuh disajikan lewat halaman Riwayat Tiket di Fase 6. |
+| 2026-08-21 | Eksperimen UI ditolak & di-revert: percobaan mengganti kartu Kanban dengan 3 tabel ber-paginasi independen (checkpoint `acf9854`) tidak sesuai selera user — tampilan Kartu Kanban dipertahankan sebagai tampilan final halaman Helpdesk. Rollback via `git restore` 4 file trial, test tetap hijau. |
+| 2026-08-21 | Perbaikan logika status PC (Opsi B): `syncAssetStatus()` menghitung ulang status PC dari sisa tiket aktif (`!= Resolved`, severity tertinggi menang, guard Scrapped) — dipakai di `resolve()` & `destroy()`. Fix 2 bug: (1) hapus tiket tidak pernah mengembalikan status PC, (2) resolve 1 dari 2 tiket aktif memaksa PC langsung Ready. Keputusan desain Model A: status PC = kondisi fisik dari severity komponen; In Progress tidak mengubah status PC; Open & In Progress sama-sama dihitung aktif. Pesan sukses resolve kini dinamis sesuai status akhir PC. +5 test baru. |
+| 2026-08-21 | Revisi: limit kolom Resolved di Kanban diturunkan dari 10 menjadi 5 tiket terbaru (keputusan user; riwayat lengkap tetap diserahkan ke laporan Fase 6). Test limit direvisi mengikuti (`test_resolved_column_shows_only_five_newest`). |
+| 2026-08-21 | Data tiket contoh dibuang: TicketSeeder dihapus dari DatabaseSeeder + file seeder dihapus, database di-fresh — tabel `tickets` kosong (fitur Lapor Kendala mulai dari data nyata user). Labs/assets/schedules/users tetap ter-seed. TicketFactory dipertahankan untuk kebutuhan test. |

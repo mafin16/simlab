@@ -39,7 +39,7 @@ class TicketController extends Controller
             'selectedLab' => $selectedLab,
             'openTickets' => $tickets->where('status', 'Open'),
             'progressTickets' => $tickets->where('status', 'In Progress'),
-            'resolvedTickets' => $resolvedAll->take(10),
+            'resolvedTickets' => $resolvedAll->take(5),
             'resolvedTotal' => $resolvedAll->count(),
             'assets' => $assetsQuery->get(),
             'canManage' => in_array($request->user()->role, ['super_admin', 'teknisi']),
@@ -104,19 +104,19 @@ class TicketController extends Controller
                 'resolved_at' => now(),
             ]);
 
-            if ($ticket->asset->status !== 'Scrapped') {
-                $ticket->asset->update(['status' => 'Ready']);
-            }
+            $this->syncAssetStatus($ticket->asset);
         });
 
         return back()
-            ->with('success', "Tiket {$ticket->ticket_code} diselesaikan. Status {$ticket->asset->asset_code} kembali Ready.");
+            ->with('success', "Tiket {$ticket->ticket_code} diselesaikan. Status {$ticket->asset->asset_code} kini {$ticket->asset->status}.");
     }
 
     public function destroy(Ticket $ticket): RedirectResponse
     {
-        $label = $ticket->ticket_code.' ('.$ticket->asset->asset_code.')';
+        $asset = $ticket->asset;
+        $label = $ticket->ticket_code.' ('.$asset->asset_code.')';
         $ticket->delete();
+        $this->syncAssetStatus($asset);
 
         return back()->with('success', "Tiket {$label} berhasil dihapus.");
     }
@@ -131,6 +131,25 @@ class TicketController extends Controller
 
         if (self::SEVERITY[$asset->status] < self::SEVERITY[$target]) {
             $asset->update(['status' => $target]);
+        }
+    }
+
+    private function syncAssetStatus(Asset $asset): void
+    {
+        if ($asset->status === 'Scrapped') {
+            return;
+        }
+
+        $target = $asset->tickets()->where('status', '!=', 'Resolved')
+            ->get()
+            ->map(fn (Ticket $t) => Ticket::COMPONENT_ASSET_STATUS[$t->component_issue])
+            ->sortByDesc(fn (string $s) => self::SEVERITY[$s])
+            ->first();
+
+        $newStatus = $target ?? 'Ready';
+
+        if ($newStatus !== $asset->status) {
+            $asset->update(['status' => $newStatus]);
         }
     }
 }

@@ -184,9 +184,9 @@
                         @endforelse
                     </div>
 
-                    @if ($status === 'Resolved' && $resolvedTotal > 10)
+                    @if ($status === 'Resolved' && $resolvedTotal > 5)
                         <p class="mt-3 pt-2 border-t border-slate-800 text-[10px] text-slate-500 text-center">
-                            Menampilkan 10 terbaru dari {{ $resolvedTotal }} tiket selesai
+                            Menampilkan 5 terbaru dari {{ $resolvedTotal }} tiket selesai
                         </p>
                     @endif
                 </div>

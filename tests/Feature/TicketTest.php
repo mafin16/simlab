@@ -65,7 +65,7 @@ class TicketTest extends TestCase
             ->assertSee("+ '/resolve'", false);
     }
 
-    public function test_resolved_column_shows_only_ten_newest(): void
+    public function test_resolved_column_shows_only_five_newest(): void
     {
         Ticket::factory()->resolved()->create([
             'ticket_code' => 'TKT-9001',
@@ -82,9 +82,10 @@ class TicketTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('tickets.index'))
             ->assertOk()
-            ->assertSee('Menampilkan 10 terbaru dari 12 tiket selesai', false)
+            ->assertSee('Menampilkan 5 terbaru dari 12 tiket selesai', false)
             ->assertSee('TKT-7001', false)
-            ->assertDontSee('TKT-7011', false)
+            ->assertSee('TKT-7005', false)
+            ->assertDontSee('TKT-7006', false)
             ->assertDontSee('TKT-9001', false);
     }
 
@@ -284,5 +285,73 @@ class TicketTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseCount('tickets', 1);
+    }
+
+    public function test_destroy_open_ticket_reverts_asset_to_ready(): void
+    {
+        $asset = Asset::factory()->create(['category' => 'PC Desktop', 'status' => 'Degraded']);
+        $ticket = Ticket::factory()->create(['asset_id' => $asset->id, 'component_issue' => 'Mouse / Keyboard']);
+
+        $this->actingAs($this->admin())
+            ->delete(route('tickets.destroy', $ticket))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'status' => 'Ready']);
+    }
+
+    public function test_destroy_heaviest_ticket_downgrades_asset_to_remaining_severity(): void
+    {
+        $asset = Asset::factory()->create(['category' => 'PC Desktop', 'status' => 'Maintenance']);
+        $monitor = Ticket::factory()->create(['asset_id' => $asset->id, 'component_issue' => 'Monitor Blank / Flashing']);
+        Ticket::factory()->create(['asset_id' => $asset->id, 'component_issue' => 'Mouse / Keyboard']);
+
+        $this->actingAs($this->admin())
+            ->delete(route('tickets.destroy', $monitor))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'status' => 'Degraded']);
+    }
+
+    public function test_resolve_one_of_two_active_tickets_keeps_remaining_severity(): void
+    {
+        $asset = Asset::factory()->create(['category' => 'PC Desktop', 'status' => 'Maintenance']);
+        $monitor = Ticket::factory()->inProgress()->create(['asset_id' => $asset->id, 'component_issue' => 'Monitor Blank / Flashing']);
+        Ticket::factory()->inProgress()->create(['asset_id' => $asset->id, 'component_issue' => 'Mouse / Keyboard']);
+
+        $this->actingAs($this->teknisi())
+            ->post(route('tickets.resolve', $monitor), ['resolution_notes' => 'Panel monitor diganti unit cadangan.'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'status' => 'Degraded']);
+    }
+
+    public function test_destroy_ticket_does_not_override_scrapped_asset(): void
+    {
+        $asset = Asset::factory()->create(['category' => 'PC Desktop', 'status' => 'Scrapped']);
+        $ticket = Ticket::factory()->create(['asset_id' => $asset->id, 'component_issue' => 'Monitor Blank / Flashing']);
+
+        $this->actingAs($this->admin())
+            ->delete(route('tickets.destroy', $ticket))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'status' => 'Scrapped']);
+    }
+
+    public function test_start_ticket_does_not_change_asset_status(): void
+    {
+        $asset = Asset::factory()->create(['category' => 'PC Desktop', 'status' => 'Degraded']);
+        $ticket = Ticket::factory()->create(['asset_id' => $asset->id, 'component_issue' => 'Mouse / Keyboard']);
+
+        $this->actingAs($this->teknisi())
+            ->post(route('tickets.start', $ticket))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'In Progress']);
+        $this->assertDatabaseHas('assets', ['id' => $asset->id, 'status' => 'Degraded']);
     }
 }
