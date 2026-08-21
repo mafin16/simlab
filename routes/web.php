@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -61,6 +62,18 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status');
         Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
+    });
+
+    // Fase 4: Helpdesk & Tiket (Kanban)
+    Route::middleware('role:super_admin,teknisi,instruktur')->group(function () {
+        Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    });
+
+    Route::middleware('role:super_admin,teknisi')->group(function () {
+        Route::post('/tickets/{ticket}/start', [TicketController::class, 'start'])->name('tickets.start');
+        Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('tickets.resolve');
+        Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
     });
 });
 

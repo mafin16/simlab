@@ -52,11 +52,10 @@
             <span>Jadwal & Booking Lab</span>
         </x-nav-link>
 
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all cursor-not-allowed opacity-60" title="Coming di Fase 4">
+        <x-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')">
             <i class="fa-solid fa-ticket-simple w-5 text-center text-base"></i>
-            <span class="flex-1">Helpdesk & Servis</span>
-            <span class="text-[8px] px-1 py-0.5 rounded bg-slate-800 text-slate-500">F4</span>
-        </a>
+            <span>Helpdesk & Servis</span>
+        </x-nav-link>
 
         <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all cursor-not-allowed opacity-60" title="Coming di Fase 6">
             <i class="fa-solid fa-file-invoice w-5 text-center text-base"></i>

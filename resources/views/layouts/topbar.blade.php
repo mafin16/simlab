@@ -35,10 +35,18 @@
         </div>
 
         <!-- Lapor Kendala -->
-        <button class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-not-allowed opacity-80" title="Coming di Fase 4">
+        <a href="{{ route('tickets.index') }}"
+           @click.prevent="
+              if (window.location.href.split('?')[0] === @js(route('tickets.index'))) {
+                 $dispatch('open-modal', 'modalNewTicket')
+              } else {
+                 window.location.href = @js(route('tickets.index'))
+              }
+           "
+           class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all" title="Lapor Kendala Perangkat">
             <i class="fa-solid fa-triangle-exclamation"></i>
             <span class="hidden sm:inline">Lapor Kendala</span>
-        </button>
+        </a>
 
         @if (in_array(auth()->user()->role, ['super_admin', 'teknisi']))
             <a href="{{ route('assets.create') }}" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-lg shadow-blue-600/20">

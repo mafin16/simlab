@@ -41,7 +41,7 @@
                     </p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-shield-check"></i>
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
             </div>
 
@@ -104,7 +104,12 @@
                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-screwdriver-wrench text-amber-400"></i> Tiket Servis Perlu Penanganan
                     </h3>
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">{{ $activeTickets }} Tiket Aktif</span>
+                    <div class="flex items-center gap-3">
+                        @if (in_array(auth()->user()->role, ['super_admin', 'teknisi', 'instruktur']))
+                            <a href="{{ route('tickets.index') }}" class="text-xs text-blue-400 hover:underline">Lihat Semua</a>
+                        @endif
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">{{ $activeTickets }} Tiket Aktif</span>
+                    </div>
                 </div>
                 <div class="space-y-3">
                     @forelse ($recentTickets as $ticket)
@@ -155,80 +160,84 @@
 
     @push('scripts')
     <script>
-        const isDark = document.documentElement.classList.contains('dark');
-        const textColor = isDark ? '#94a3b8' : '#475569';
-        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
+        // Chart.js didefinisikan oleh app.js (module script / deferred), jadi
+        // inisialisasi harus menunggu DOMContentLoaded agar window.Chart tersedia.
+        document.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)';
 
-        // Chart 1: Condition Doughnut
-        const ctx1 = document.getElementById('conditionChart');
-        new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: @json($doughnutData['labels']),
-                datasets: [{
-                    data: @json($doughnutData['values']),
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        titleColor: '#f1f5f9',
-                        bodyColor: '#94a3b8',
-                        borderColor: 'rgba(255,255,255,0.08)',
-                        borderWidth: 1
-                    }
+            // Chart 1: Condition Doughnut
+            const ctx1 = document.getElementById('conditionChart');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: @json($doughnutData['labels']),
+                    datasets: [{
+                        data: @json($doughnutData['values']),
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
                 },
-                cutout: '75%'
-            }
-        });
-
-        // Chart 2: Occupancy Bar
-        const ctx2 = document.getElementById('occupancyChart');
-        new Chart(ctx2, {
-            type: 'bar',
-            data: {
-                labels: @json($occupancyData['labels']),
-                datasets: [{
-                    label: 'Jumlah Sesi',
-                    data: @json($occupancyData['values']),
-                    backgroundColor: '#6366f1',
-                    hoverBackgroundColor: '#818cf8',
-                    borderRadius: 6,
-                    maxBarThickness: 28
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        titleColor: '#f1f5f9',
-                        bodyColor: '#94a3b8',
-                        borderColor: 'rgba(255,255,255,0.08)',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: textColor }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            borderWidth: 1
+                        }
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: textColor, stepSize: 1 },
-                        grid: { color: gridColor }
+                    cutout: '75%'
+                }
+            });
+
+            // Chart 2: Occupancy Bar
+            const ctx2 = document.getElementById('occupancyChart');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: @json($occupancyData['labels']),
+                    datasets: [{
+                        label: 'Jumlah Sesi',
+                        data: @json($occupancyData['values']),
+                        backgroundColor: '#6366f1',
+                        hoverBackgroundColor: '#818cf8',
+                        borderRadius: 6,
+                        maxBarThickness: 28
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#94a3b8',
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor, stepSize: 1 },
+                            grid: { color: gridColor }
+                        }
                     }
                 }
-            }
+            });
         });
     </script>
     @endpush

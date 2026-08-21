@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedLabsAndAssets();
         $this->call(ScheduleSeeder::class);
+        $this->call(TicketSeeder::class);
         $this->seedUsers();
     }
 
