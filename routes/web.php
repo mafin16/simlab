@@ -8,6 +8,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SeatMapController;
 use App\Http\Controllers\TicketController;
@@ -81,6 +82,16 @@ Route::middleware('auth')->group(function () {
     // Fase 5: Seat Mapping & Presensi
     Route::get('/seatmap', [SeatMapController::class, 'index'])->name('seatmap.index');
     Route::get('/seatmap/status', [SeatMapController::class, 'status'])->name('seatmap.status');
+
+    // Fase 6: Laporan & Audit + Riwayat Tiket (staf saja)
+    Route::middleware('role:super_admin,teknisi,instruktur')->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/maintenance/pdf', [ReportController::class, 'maintenancePdf'])->name('reports.maintenance.pdf');
+        Route::get('/reports/presence/pdf', [ReportController::class, 'presencePdf'])->name('reports.presence.pdf');
+        Route::get('/reports/presence/excel', [ReportController::class, 'presenceExcel'])->name('reports.presence.excel');
+        Route::get('/tickets/history', [TicketController::class, 'history'])->name('tickets.history');
+        Route::get('/tickets/history/excel', [TicketController::class, 'historyExcel'])->name('tickets.history.excel');
+    });
 });
 
 // Check-in presensi publik (hasil scan QR di meja PC, tanpa login)

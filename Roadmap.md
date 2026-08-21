@@ -12,7 +12,7 @@
 | 3 | Penjadwalan & Reservasi Lab | ✅ Done | 2026-08-20 | 2026-08-20 | Kalender mingguan, booking recurring mingguan, collision detection auto-reject |
 | 4 | Helpdesk & Tiket (Kanban) | ✅ Done | 2026-08-21 | 2026-08-21 | Kanban 3 kolom, auto-escalasi status PC, SLA |
 | 5 | Seat Mapping & Presensi | ✅ Done | 2026-08-21 | 2026-08-21 | Denah interaktif live (polling 10 detik), check-in QR publik, auto clear session |
-| 6 | Laporan & Polish | ⬜ Not Started | - | - | Export Excel/PDF, halaman Riwayat Tiket (tabel+pagination), Dark/Light mode, responsive |
+| 6 | Laporan & Polish | ✅ Done | 2026-08-21 | 2026-08-21 | Hub laporan, PDF pemeliharaan & presensi (DomPDF), Riwayat Tiket + pagination, export Excel |
 
 ## Keputusan Teknis (Technical Decisions)
 
@@ -32,6 +32,11 @@
 | 2026-08-21 | Generator kode tiket (`Ticket::nextCode()`) berbasis suffix kode terakhir (max `ticket_code`), bukan `max(id)+1` — id MySQL auto-increment bisa loncat (rollback/delete) sehingga kode jadi tidak berurutan. |
 | 2026-08-21 | Fase 5: check-in presensi publik tanpa login (siswa isi NISN + nama setelah scan QR). PC Degraded boleh dipresensi dengan warning kuning; Maintenance/Scrapped ditolak. Bentrok identitas (NISN masih aktif di PC lain) → auto check-out dari PC lama lalu pindah (auto pindah). Kursi sudah terisi orang lain → ditolak dengan info nama pemakai. |
 | 2026-08-21 | Fase 5: seat map bisa dibuka semua role (termasuk siswa, view-only); polling AJAX tiap 10 detik; modal detail PC tidak menyediakan ubah status manual demi konsistensi Model A (status PC hanya berubah lewat tiket) — diganti tombol "Lapor Kendala PC Ini". QR code aset kini meng-encode URL check-in lengkap (bukan sekadar kode aset) agar scan HP langsung membuka form presensi. |
+| 2026-08-21 | Fase 6: PDF engine pakai `barryvdh/laravel-dompdf ^3.1` (keputusan user). Kedua laporan PDF dicetak portrait A4. |
+| 2026-08-21 | Fase 6: periode laporan pakai rentang tanggal bebas (date picker dari–sampai), default bulan berjalan — bukan preset semester (keputusan user). Validasi `after_or_equal` menolak rentang terbalik. |
+| 2026-08-21 | Fase 6: halaman Laporan & Riwayat Tiket hanya untuk staf (super_admin, teknisi, instruktur) via middleware role; siswa 403 (keputusan user). Menu sidebar tetap tampil untuk semua role sesuai konvensi app (RBAC di level route). |
+| 2026-08-21 | Fase 6: mekanisme download laporan memakai form GET native + atribut HTML `formaction` untuk tombol kedua (Excel) — tanpa JS/fetch. Navigasi top-level paling kompatibel di semua lingkungan browser (ekstensi downloader/VPN tidak mengganggu), feedback progres dari UI download bawaan browser. Semua respons download diberi header `Cache-Control: no-store, must-revalidate`. |
+| 2026-08-21 | Akses resmi app: Apache XAMPP VirtualHost `http://localhost:8080` → DocumentRoot `simlab/public` (root deployment, bukan subdirectory — path aset Vite `/build/...` aman). Hostname `localhost` dipercaya Chrome (secure context + bebas skrining Safe Browsing) sehingga download tanpa notif keamanan; Apache multi-threaded stabil untuk polling seatmap, sedangkan server built-in PHP (`artisan serve`) single-threaded dan tidak layak untuk pemakaian browser harian. Alias `http://simlab.test` terpasang via hosts file; vhost default localhost dipertahankan agar project lain di htdocs tak terpengaruh. `.env APP_URL=http://localhost:8080`. |
 
 ## Fase 1 — Detail Tasks
 
@@ -68,9 +73,18 @@
 - [x] PresenceFactory + SeatMapTest (8 test) + PresenceTest (11 test)
 - [x] 118 test pass (341 assertions), Pint clean, npm build OK
 
-## Fase 6 — Catatan Desain Awal
+## Fase 6 — Detail Tasks
 
-- Halaman **Riwayat Tiket**: tabel semua tiket (termasuk resolved lama yang tidak tampil di Kanban) + pagination + filter + export Excel/PDF. Kanban board hanya menampilkan 5 tiket resolved terbaru agar ringkas.
+- [x] Install `barryvdh/laravel-dompdf ^3.1` via Composer
+- [x] ReportController: `index()` (hub laporan + ringkasan bulan berjalan: tiket aktif, selesai bulan ini, sesi presensi, total jam praktikum), `maintenancePdf()` (tiket Resolved per lab + rentang tanggal, portrait A4, kolom SLA tepat/lewat + ringkasan), `presencePdf()` (log sesi per lab + rentang, portrait A4, durasi + ringkasan pengguna unik), `presenceExcel()` (PhpSpreadsheet, stream download)
+- [x] TicketController: `history()` (tabel semua tiket, pagination 15/baris `withQueryString`, filter lab/status/prioritas/search kode+pelapor/rentang tanggal lapor), `historyExcel()` (export mengikuti filter aktif)
+- [x] Routes staf-only (`role:super_admin,teknisi,instruktur`): `/reports`, `/reports/maintenance/pdf`, `/reports/presence/pdf`, `/reports/presence/excel`, `/tickets/history`, `/tickets/history/excel`
+- [x] View `reports/index`: hub 4 kartu laporan (Aset Excel, Riwayat Tiket, PDF Pemeliharaan, Presensi PDF+Excel) dengan form filter tanggal default bulan berjalan + dropdown lab
+- [x] View `tickets/history`: panel filter (search, lab, status, prioritas, rentang tanggal) + tabel arsip dengan badge prioritas/status, durasi vs SLA berwarna, empty state, pagination
+- [x] Template PDF standalone (`reports/pdf/maintenance`, `reports/pdf/presence`) dengan header periode/lab/waktu cetak + baris ringkasan
+- [x] Sidebar "Laporan & Audit" (F6) aktif; tombol "Riwayat Lengkap" di header Kanban
+- [x] ReportTest (9 test: RBAC guest/siswa/staf, filename & content-type PDF, validasi rentang terbalik, filter isi Excel via inspeksi ZIP xlsx) + TicketHistoryTest (9 test: RBAC, filter status/search/tanggal/lab, pagination 15/baris, export Excel terfilter)
+- [x] 138 test pass (420 assertions), Pint clean, npm build OK, smoke test HTTP semua halaman & download baru
 
 ## Akun Default (untuk testing)
 
@@ -111,3 +125,5 @@
 | 2026-08-21 | Bugfix lanjutan seat map (gejala sama setelah fix pertama): directive `@js()` ternyata menghasilkan string JS ber-pembatas kutip TUNGGAL, sehingga di dalam atribut `x-data='...'` nilai `serverTime`/`endpoint` memutus atribut di apostrof pertama — sisa kode JS bocor jadi teks di halaman (`his.refresh(), 10000); }, async refresh()...`). Fix: kedua `@js()` diganti `@json()` (json_encode murni, pembatas kutip ganda). Pelajaran: `@js()` hanya aman di atribut kutip ganda; `@json()` untuk atribut kutip tunggal. Verifikasi forensik HTTP: 0 apostrof mentah di dalam atribut (sebelumnya 6), 118 test tetap pass. |
 | 2026-08-21 | Persiapan pengujian alur siswa: akun `siswa@simlab.test` (password) ditambahkan ke DatabaseSeeder + database di-fresh; tombol "Lapor Kendala PC Ini" di modal seat map disembunyikan untuk role siswa (halaman Helpdesk 403 untuk siswa sesuai RBAC — mencegah klik → error page). +2 test (siswa tanpa tombol, admin dengan tombol) → 120 test pass (345 assertions). Verifikasi HTTP: siswa lihat denah tanpa tombol, admin tetap dengan tombol. |
 | 2026-08-21 | Uji coba end-to-end dari HP sukses: check-in publik via `php artisan serve --host=0.0.0.0 --port=8080` (URL HP: `http://<ip-lan>:8080/checkin/<kode>` tanpa prefix `/simlab/public`) → kartu di seat map admin berubah biru pulse otomatis dalam ≤10 detik tanpa refresh. Catatan operasional: akses IP LAN dari luar terblokir selama HMA VPN aktif (adapter Wintun menyaring trafik non-loopback) — VPN harus dilepas saat uji coba; artisan serve default hanya bind 127.0.0.1 sehingga wajib `--host=0.0.0.0` untuk diakses perangkat lain. Fase 5 resmi tuntas & terverifikasi manual. Fase 6 menunggu konfirmasi user. |
+| 2026-08-21 | Fase 6 selesai: Laporan & Polish. Hub `/reports` (4 kartu laporan + ringkasan bulan berjalan), PDF pemeliharaan (tiket Resolved: komponen→solusi→teknisi→durasi vs SLA, landscape) & log presensi (durasi + pengguna unik, portrait) via DomPDF, export Excel presensi & riwayat tiket (PhpSpreadsheet), halaman Riwayat Tiket (pagination 15/baris + filter lab/status/prioritas/search/rentang tanggal), sidebar F6 aktif + tombol "Riwayat Lengkap" di Kanban. Semua route staf-only; siswa 403. +18 test → 138 test pass (420 assertions). Smoke test HTTP: semua halaman 200, PDF ~880KB valid, XLSX valid. |
+| 2026-08-21 | Finalisasi Fase 6: mekanisme download ditetapkan memakai form GET native + atribut `formaction` untuk tombol Excel (tanpa JS/fetch — navigasi top-level paling kompatibel di semua lingkungan browser, feedback dari UI download bawaan Chrome) + header `Cache-Control: no-store, must-revalidate` di keempat endpoint download. Infrastruktur akses distandarkan: Apache VirtualHost `http://localhost:8080` mengarah langsung ke `simlab/public` (root deployment — path aset Vite aman, hostname localhost dipercaya Chrome sehingga download tanpa notif keamanan); alias `http://simlab.test` terpasang via hosts file; vhost default localhost dipertahankan sehingga project lain di htdocs tak terpengaruh; `.env APP_URL` menyesuaikan. Catatan operasional: server built-in PHP (`artisan serve`) single-threaded dan tidak layak untuk pemakaian browser harian. Verifikasi: login + 3 download 200 utuh via curl, 138 test pass, konfirmasi manual user OK. |

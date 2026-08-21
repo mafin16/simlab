@@ -82,6 +82,11 @@
                     <x-select name="lab_id" :options="$labOptions" selected="{{ $selectedLab?->id ?? '' }}" placeholder="Semua Lab" submit />
                 </form>
 
+                <a href="{{ route('tickets.history') }}" title="Lihat arsip semua tiket"
+                   class="border border-slate-700 hover:border-slate-500 text-slate-300 font-semibold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Lengkap
+                </a>
+
                 @if ($canCreate)
                     <button @click="$dispatch('open-modal', 'modalNewTicket')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-lg shadow-amber-500/20">
                         <i class="fa-solid fa-plus"></i> Buat Tiket Baru

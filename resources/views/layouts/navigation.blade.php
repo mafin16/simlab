@@ -56,11 +56,10 @@
             <span>Helpdesk & Servis</span>
         </x-nav-link>
 
-        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all cursor-not-allowed opacity-60" title="Coming di Fase 6">
+        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
             <i class="fa-solid fa-file-invoice w-5 text-center text-base"></i>
-            <span class="flex-1">Laporan & Audit</span>
-            <span class="text-[8px] px-1 py-0.5 rounded bg-slate-800 text-slate-500">F6</span>
-        </a>
+            <span>Laporan & Audit</span>
+        </x-nav-link>
     </nav>
 
     <!-- User Profile Card in Sidebar -->

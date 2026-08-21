@@ -9,6 +9,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TicketController extends Controller
 {
@@ -119,6 +122,101 @@ class TicketController extends Controller
         $this->syncAssetStatus($asset);
 
         return back()->with('success', "Tiket {$label} berhasil dihapus.");
+    }
+
+    public function history(Request $request): View
+    {
+        $labs = Lab::orderBy('id')->get();
+
+        $data = $request->validate([
+            'lab_id' => 'nullable|integer|exists:labs,id',
+            'status' => 'nullable|in:'.implode(',', Ticket::STATUSES),
+            'priority' => 'nullable|in:'.implode(',', Ticket::PRIORITIES),
+            'search' => 'nullable|string|max:100',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $tickets = $this->historyQuery($data)
+            ->orderByDesc('reported_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('tickets.history', [
+            'tickets' => $tickets,
+            'labs' => $labs,
+            'filters' => collect($data),
+        ]);
+    }
+
+    public function historyExcel(Request $request): StreamedResponse
+    {
+        $data = $request->validate([
+            'lab_id' => 'nullable|integer|exists:labs,id',
+            'status' => 'nullable|in:'.implode(',', Ticket::STATUSES),
+            'priority' => 'nullable|in:'.implode(',', Ticket::PRIORITIES),
+            'search' => 'nullable|string|max:100',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+        ]);
+
+        $tickets = $this->historyQuery($data)->orderByDesc('reported_at')->get();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Riwayat Tiket');
+
+        $sheet->fromArray([
+            'Kode Tiket', 'Kode Aset', 'Lab', 'Komponen', 'Prioritas', 'Status',
+            'Pelapor', 'Teknisi', 'Dilaporkan', 'Diselesaikan', 'Durasi (jam)', 'Solusi',
+        ], null, 'A1');
+
+        $rowIndex = 2;
+        foreach ($tickets as $ticket) {
+            $duration = $ticket->resolved_at
+                ? (int) ceil(($ticket->resolved_at->getTimestamp() - $ticket->reported_at->getTimestamp()) / 3600)
+                : null;
+
+            $sheet->fromArray([
+                $ticket->ticket_code,
+                $ticket->asset->asset_code,
+                $ticket->asset->lab->name,
+                $ticket->component_issue,
+                $ticket->priority,
+                $ticket->status,
+                $ticket->reporter_name,
+                $ticket->technician_name ?? '-',
+                $ticket->reported_at->format('d/m/Y H:i'),
+                $ticket->resolved_at?->format('d/m/Y H:i') ?? '-',
+                $duration ?? '-',
+                $ticket->resolution_notes ?? '-',
+            ], null, 'A'.$rowIndex);
+            $rowIndex++;
+        }
+
+        foreach (range('A', 'L') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        }, 'riwayat-tiket.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'no-store, must-revalidate',
+        ]);
+    }
+
+    private function historyQuery(array $data)
+    {
+        return Ticket::with('asset.lab')
+            ->when($data['lab_id'] ?? null, fn ($q, $v) => $q->whereHas('asset', fn ($q2) => $q2->where('lab_id', (int) $v)))
+            ->when($data['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->when($data['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            ->when($data['search'] ?? null, fn ($q, $v) => $q->where(fn ($q2) => $q2
+                ->where('ticket_code', 'like', "%{$v}%")
+                ->orWhere('reporter_name', 'like', "%{$v}%")))
+            ->when($data['date_from'] ?? null, fn ($q, $v) => $q->whereDate('reported_at', '>=', $v))
+            ->when($data['date_to'] ?? null, fn ($q, $v) => $q->whereDate('reported_at', '<=', $v));
     }
 
     private function escalateAsset(Asset $asset, string $component): void
