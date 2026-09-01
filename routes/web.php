@@ -94,9 +94,9 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Check-in presensi publik (hasil scan QR di meja PC, tanpa login)
-Route::get('/checkin/{asset_code}', [PresenceController::class, 'show'])->name('checkin.show');
-Route::post('/checkin/{asset_code}', [PresenceController::class, 'store'])->name('checkin.store');
-Route::post('/checkin/{asset_code}/checkout', [PresenceController::class, 'checkout'])->name('checkin.checkout');
+// Check-in presensi publik (hasil scan QR di meja PC, tanpa login) — rate-limited untuk mode public
+Route::get('/checkin/{asset_code}', [PresenceController::class, 'show'])->middleware('throttle:60,1')->name('checkin.show');
+Route::post('/checkin/{asset_code}', [PresenceController::class, 'store'])->middleware('throttle:10,1')->name('checkin.store');
+Route::post('/checkin/{asset_code}/checkout', [PresenceController::class, 'checkout'])->middleware('throttle:10,1')->name('checkin.checkout');
 
 require __DIR__.'/auth.php';

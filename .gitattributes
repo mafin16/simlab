@@ -9,3 +9,9 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+/.env* export-ignore
+/database/*.sqlite export-ignore
+/storage/logs export-ignore
+/storage/framework/sessions export-ignore
+/storage/framework/views export-ignore
+/bootstrap/cache export-ignore

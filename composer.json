@@ -1,10 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "mafin/simlab",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "SIMLAB — Sistem Pengelolaan Laboratorium Komputer (Laravel 12 + MySQL + Tailwind + Alpine)",
+    "keywords": ["laravel", "simlab", "laboratory", "asset-management", "helpdesk"],
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/mafin16/simlab/issues",
+        "source": "https://github.com/mafin16/simlab"
+    },
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",

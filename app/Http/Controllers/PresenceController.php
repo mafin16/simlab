@@ -41,7 +41,7 @@ class PresenceController extends Controller
                 ->first();
 
             if ($occupant && $occupant->user_identifier !== $data['user_identifier']) {
-                return ['error' => "Kursi ini sedang dipakai oleh {$occupant->user_fullname} sejak {$occupant->check_in_time->format('H:i')}."];
+                return ['error' => "Kursi ini sedang dipakai sejak {$occupant->check_in_time->format('H:i')} (privat)."];
             }
 
             if ($occupant) {
